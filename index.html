@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>NCI header generator</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+
+  <!-- Libraries
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+
+</head>
+<body>
+
+  <!-- Primary Page Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <div class="container">
+    <div class="row">
+      <div class="one-half column" style="margin-top: 25%">
+        <h1>NCI header generator</h1>
+        <h4>Queue (Per node: CPUs, Memory, Storage)</h4><br />
+        <select id='queue' name="queue">
+          <option value="normal" selected>normal (48, 192, 400)</option>
+          <option value="copyq">copyq (48, 192, 400)</option>
+          <option value="normalsl">normalsl (32, 192, 400)</option>
+          <option value="normalbw">normalbw (28, 256, 440)</option>
+          <option value="hugemem">hugemem (28, 1024, 440)</option>
+          <option value="megamem">megamem (32, 3072, 800)</option>
+        </select>
+        <p id="q_notes"></p>
+        <br />
+        <h4>Cores </h4><br />
+        <input id='ncpus' type="number" min=1 class="form-control formBlock u-full-width" name="ncpus"  placeholder="CPUs" /><br />
+        <br />
+        <h4>Memory (GB) </h4><br />
+        <input id='mem' type="number" min=1 class="form-control formBlock u-full-width" name="mem"  placeholder="Memory (GB)" /><br />
+        <br />
+        <h4>Walltime (Hours) </h4><br />
+        <input id='wt' type="number" class="form-control formBlock u-full-width" name="mem"  placeholder="Walltime (Hours)" /><br />
+        <br />
+        Max SU for this job: <span id="max_su"></span>
+        <pre>
+          <code>
+#PBS -q <span id="q_out">normal</span>
+#PBS -l ncpus=<span id="ncpus_out"></span>
+#PBS -l mem=<span id="mem_out"></span>
+#PBS -l walltime=<span id="wt_out"></span>
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript">
+  var q_data = {};
+  q_data['normal']={};
+  q_data['normal']['mem_per_cpu']=192/48;
+  q_data['normal']['su_per_cpuhour']=2;
+  q_data['normalsl']={};
+  q_data['normalsl']['mem_per_cpu']=192/32;
+  q_data['normalsl']['su_per_cpuhour']=1.5;
+  q_data['copyq']={};
+  q_data['copyq']['mem_per_cpu']=192/48;
+  q_data['copyq']['su_per_cpuhour']=2;
+  q_data['normalbw']={};
+  q_data['normalbw']['mem_per_cpu']=256/28;
+  q_data['normalbw']['su_per_cpuhour']=1.25;
+  q_data['hugemem']={};
+  q_data['hugemem']['mem_per_cpu']=1024/28;
+  q_data['hugemem']['su_per_cpuhour']=1.25;
+  q_data['megamem']={};
+  q_data['megamem']['mem_per_cpu']=3072/32;
+  q_data['megamem']['su_per_cpuhour']=1.25;
+
+  $('#queue').change(function(){
+    $('#q_out').html($('#queue').val());
+  });
+
+  $('#ncpus').change(function(){
+    queue = $('#queue').val();
+    ncpus = Number($('#ncpus').val());
+    mem = (ncpus * q_data[queue]['mem_per_cpu']);
+    $('#mem').val(mem);
+    $('#ncpus_out').html(ncpus);
+    $('#mem_out').html(mem);
+    if($('#wt').val()){
+      max_su = (q_data[queue]['su_per_cpuhour'] * wt * ncpus);
+      $('#max_su').html(max_su);
+    }
+  });
+
+  $('#mem').change(function(){
+    queue = $('#queue').val();
+    mem = Number($('#mem').val());
+    ncpus = (mem / q_data[queue]['mem_per_cpu']);
+    $('#ncpus').val(ncpus);
+    $('#ncpus_out').html(ncpus);
+    $('#mem_out').html(mem);
+    if($('#wt').val()){
+      max_su = (q_data[queue]['su_per_cpuhour'] * wt * ncpus);
+      $('#max_su').html(max_su);
+    }
+  });
+
+  $('#wt').change(function(){
+    queue = $('#queue').val();
+    ncpus = Number($('#ncpus').val());
+    wt = Number($('#wt').val());
+    max_su = (q_data[queue]['su_per_cpuhour'] * wt * ncpus);
+    $('#max_su').html(max_su);
+    $('#wt_out').html(hours_to_time(wt));
+  });
+
+  function hours_to_time(hours){
+    var n = new Date(0,0);
+    n.setSeconds(+hours * 60 * 60);
+    return n.toTimeString().slice(0, 8);
+  }
+
+  </script>
+<!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+</body>
+</html>
